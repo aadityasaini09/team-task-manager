@@ -31,7 +31,7 @@ const TaskCard = ({ task, refetch }) => {
   const handleStageChange = async (newStage) => {
     try {
       setUpdating(true);
-      const res = await fetch(`http://localhost:8800/api/task/update/${task._id}`, {
+      const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/task/update/${task._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

@@ -39,8 +39,8 @@ const Tasks = () => {
     try {
       setLoading(true);
       const url = status
-        ? `http://localhost:8800/api/task?stage=${status}`
-        : `http://localhost:8800/api/task`;
+        ? `https://team-task-manager-production-f811.up.railway.app/api/task?stage=${status}`
+        : `https://team-task-manager-production-f811.up.railway.app/api/task`;
 
       const res = await fetch(url, {
         headers: {

@@ -11,7 +11,7 @@ const UserList = ({ setTeam, team }) => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:8800/api/user/get-team", {
+      const res = await fetch("https://team-task-manager-production-f811.up.railway.app/api/user/get-team", {
         credentials: "include",
       });
       const users = await res.json();

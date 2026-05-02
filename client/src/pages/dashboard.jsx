@@ -154,7 +154,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const res = await fetch("http://localhost:8800/api/task/dashboard", {
+        const res = await fetch("https://team-task-manager-production-f811.up.railway.app/api/task/dashboard", {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
         });

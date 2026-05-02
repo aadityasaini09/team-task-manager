@@ -31,7 +31,7 @@ const Table = ({ tasks }) => {
 
   const deleteHandler = async () => {
   try {
-    const res = await fetch(`http://localhost:8800/api/task/delete-restore/${selected}?actionType=delete`, {
+    const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/task/delete-restore/${selected}?actionType=delete`, {
       method: "DELETE",
       credentials: "include",
     });

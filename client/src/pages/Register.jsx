@@ -18,7 +18,7 @@ const Register = () => {
 
   const submitHandler = async (data) => {
     try {
-      const response = await fetch("http://localhost:8800/api/user/register", {
+      const response = await fetch("https://team-task-manager-production-f811.up.railway.app/api/user/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

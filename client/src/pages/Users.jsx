@@ -16,7 +16,7 @@ const Users = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:8800/api/user/get-team", {
+      const res = await fetch("https://team-task-manager-production-f811.up.railway.app/api/user/get-team", {
         credentials: "include",
       });
       const data = await res.json();
@@ -32,7 +32,7 @@ const Users = () => {
 
   const deleteHandler = async () => {
     try {
-      const res = await fetch(`http://localhost:8800/api/user/${selected}`, {
+      const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/user/${selected}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -47,7 +47,7 @@ const Users = () => {
 
   const userActionHandler = async () => {
     try {
-      const res = await fetch(`http://localhost:8800/api/user/${selected._id}`, {
+      const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/user/${selected._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

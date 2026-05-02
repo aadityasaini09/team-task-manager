@@ -38,7 +38,7 @@ const AddTask = ({ open, setOpen, refetch }) => {
         assets,
       };
 
-      const res = await fetch("http://localhost:8800/api/task/create", {
+      const res = await fetch("https://team-task-manager-production-f811.up.railway.app/api/task/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -19,7 +19,7 @@ const TaskDialog = ({ task }) => {
 
   const duplicateHandler = async () => {
   try {
-    const res = await fetch(`http://localhost:8800/api/task/duplicate/${task._id}`, {
+    const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/task/duplicate/${task._id}`, {
       method: "POST",
       credentials: "include",
     });
@@ -35,7 +35,7 @@ const deleteClicks = () => {
 
 const deleteHandler = async () => {
   try {
-    const res = await fetch(`http://localhost:8800/api/task/delete-restore/${task._id}?actionType=delete`, {
+    const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/task/delete-restore/${task._id}?actionType=delete`, {
       method: "DELETE",
       credentials: "include",
     });
