@@ -6,7 +6,7 @@ import {
   MdKeyboardDoubleArrowUp,
 } from "react-icons/md";
 import { LuClipboardEdit } from "react-icons/lu";
-import { FaNewspaper, FaUsers } from "react-icons/fa";
+import { FaNewspaper } from "react-icons/fa";
 import { FaArrowsToDot } from "react-icons/fa6";
 import moment from "moment";
 import clsx from "clsx";
@@ -28,49 +28,59 @@ const TaskTable = ({ tasks }) => {
         <th className='py-2'>Task Title</th>
         <th className='py-2'>Priority</th>
         <th className='py-2'>Team</th>
-        <th className='py-2 hidden md:block'>Created At</th>
+        <th className='py-2 hidden md:block'>Due Date</th>
       </tr>
     </thead>
   );
 
-  const TableRow = ({ task }) => (
-    <tr className='border-b border-gray-300 text-gray-600 hover:bg-gray-300/10'>
-      <td className='py-2'>
-        <div className='flex items-center gap-2'>
-          <div className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task.stage])} />
-          <p className='text-base text-black'>{task.title}</p>
-        </div>
-      </td>
-      <td className='py-2'>
-        <div className='flex gap-1 items-center'>
-          <span className={clsx("text-lg", PRIOTITYSTYELS[task.priority])}>
-            {ICONS[task.priority]}
+  const TableRow = ({ task }) => {
+    const isOverdue = new Date(task?.date) < new Date() && task?.stage !== "completed";
+    return (
+      <tr className={clsx(
+        'border-b border-gray-300 text-gray-600 hover:bg-gray-300/10',
+        isOverdue ? 'bg-red-50' : ''
+      )}>
+        <td className='py-2'>
+          <div className='flex items-center gap-2'>
+            <div className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task.stage])} />
+            <p className='text-base text-black'>{task.title}</p>
+            {isOverdue && <span className='text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold'>Overdue</span>}
+          </div>
+        </td>
+        <td className='py-2'>
+          <div className='flex gap-1 items-center'>
+            <span className={clsx("text-lg", PRIOTITYSTYELS[task.priority])}>
+              {ICONS[task.priority]}
+            </span>
+            <span className='capitalize'>{task.priority}</span>
+          </div>
+        </td>
+        <td className='py-2'>
+          <div className='flex'>
+            {task?.team?.map((m, index) => (
+              <div
+                key={index}
+                className={clsx(
+                  "w-7 h-7 rounded-full text-white flex items-center justify-center text-sm -mr-1",
+                  BGS[index % BGS.length]
+                )}
+              >
+                <UserInfo user={m} />
+              </div>
+            ))}
+          </div>
+        </td>
+        <td className='py-2 hidden md:block'>
+          <span className={clsx(
+            'text-base',
+            isOverdue ? 'text-red-600 font-semibold' : 'text-gray-600'
+          )}>
+            {isOverdue ? '⚠️ ' : ''}{moment(task?.date).fromNow()}
           </span>
-          <span className='capitalize'>{task.priority}</span>
-        </div>
-      </td>
-      <td className='py-2'>
-        <div className='flex'>
-          {task?.team?.map((m, index) => (
-            <div
-              key={index}
-              className={clsx(
-                "w-7 h-7 rounded-full text-white flex items-center justify-center text-sm -mr-1",
-                BGS[index % BGS.length]
-              )}
-            >
-              <UserInfo user={m} />
-            </div>
-          ))}
-        </div>
-      </td>
-      <td className='py-2 hidden md:block'>
-        <span className='text-base text-gray-600'>
-          {moment(task?.date).fromNow()}
-        </span>
-      </td>
-    </tr>
-  );
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <div className='w-full md:w-2/3 bg-white px-2 md:px-4 pt-4 pb-4 shadow-md rounded'>
@@ -145,11 +155,7 @@ const Dashboard = () => {
     const fetchDashboard = async () => {
       try {
         const res = await fetch("http://localhost:8800/api/task/dashboard", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user?.token}`,
-
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
         });
         const data = await res.json();
@@ -207,7 +213,7 @@ const Dashboard = () => {
       <div className='h-full flex flex-1 flex-col justify-between'>
         <p className='text-base text-gray-600'>{label}</p>
         <span className='text-2xl font-semibold'>{count}</span>
-        <span className='text-sm text-gray-400'>{"110 last month"}</span>
+        <span className='text-sm text-gray-400'>This month</span>
       </div>
       <div className={clsx("w-10 h-10 rounded-full flex items-center justify-center text-white", bg)}>
         {icon}

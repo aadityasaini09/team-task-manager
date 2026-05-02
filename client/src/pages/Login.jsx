@@ -54,7 +54,7 @@ const Login = () => {
               Manage all your task in one place!
             </span>
             <p className='flex flex-col gap-0 md:gap-4 text-4xl md:text-6xl 2xl:text-7xl font-black text-center text-blue-700'>
-              <span>Cloud-Based</span>
+              <span>TeamFlow</span>
               <span>Task Manager</span>
             </p>
             <div className='cell'>
@@ -110,7 +110,24 @@ const Login = () => {
                 label='Submit'
                 className='w-full h-10 bg-blue-700 text-white rounded-full'
               />
+
+              <p className='text-center text-sm text-gray-600'>
+                Don't have an account?{" "}
+                <span
+                  onClick={() => navigate("/register")}
+                  className='text-blue-600 hover:underline cursor-pointer font-semibold'
+                >
+                  Register here
+                </span>
+              </p>
             </div>
+
+            <div className='p-3 bg-blue-50 rounded-lg text-sm text-center border border-blue-100'>
+              <p className='font-semibold text-blue-700 mb-1'>🔐 Demo Credentials</p>
+              <p className='text-gray-600'>👑 Admin: admin@test.com / Admin1234</p>
+              <p className='text-gray-600 mt-1'>👤 Member: john@test.com / Admin1234</p>
+            </div>
+
           </form>
         </div>
       </div>

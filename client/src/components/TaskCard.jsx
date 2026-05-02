@@ -21,38 +21,69 @@ const ICONS = {
   low: <MdKeyboardArrowDown />,
 };
 
-const TaskCard = ({ task }) => {
+const STAGES = ["todo", "in progress", "completed"];
+
+const TaskCard = ({ task, refetch }) => {
   const { user } = useSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
+  const [updating, setUpdating] = useState(false);
+
+  const handleStageChange = async (newStage) => {
+    try {
+      setUpdating(true);
+      const res = await fetch(`http://localhost:8800/api/task/update/${task._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          title: task.title,
+          date: task.date,
+          team: task.team,
+          stage: newStage,
+          priority: task.priority,
+          assets: task.assets,
+        }),
+      });
+      if (res.ok) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   return (
     <>
       <div className='w-full h-fit bg-white shadow-md p-4 rounded'>
         <div className='w-full flex justify-between'>
-          <div
-            className={clsx(
-              "flex flex-1 gap-1 items-center text-sm font-medium",
-              PRIOTITYSTYELS[task?.priority]
-            )}
-          >
+          <div className={clsx("flex flex-1 gap-1 items-center text-sm font-medium", PRIOTITYSTYELS[task?.priority])}>
             <span className='text-lg'>{ICONS[task?.priority]}</span>
             <span className='uppercase'>{task?.priority} Priority</span>
           </div>
-
           {user?.isAdmin && <TaskDialog task={task} />}
         </div>
 
-        <>
-          <div className='flex items-center gap-2'>
-            <div
-              className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task.stage])}
-            />
-            <h4 className='line-clamp-1 text-black'>{task?.title}</h4>
-          </div>
-          <span className='text-sm text-gray-600'>
-            {formatDate(new Date(task?.date))}
-          </span>
-        </>
+        <div className='flex items-center gap-2'>
+          <div className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task.stage])} />
+          <h4 className='line-clamp-1 text-black'>{task?.title}</h4>
+        </div>
+        <span className='text-sm text-gray-600'>{formatDate(new Date(task?.date))}</span>
+
+        {/* STAGE CHANGE DROPDOWN */}
+        <div className='mt-2'>
+          <select
+            value={task?.stage}
+            onChange={(e) => handleStageChange(e.target.value)}
+            disabled={updating}
+            className='w-full text-sm border border-gray-200 rounded px-2 py-1 bg-gray-50 cursor-pointer'
+          >
+            {STAGES.map((s) => (
+              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+            ))}
+          </select>
+        </div>
 
         <div className='w-full border-t border-gray-200 my-2' />
         <div className='flex items-center justify-between mb-2'>
@@ -61,11 +92,11 @@ const TaskCard = ({ task }) => {
               <BiMessageAltDetail />
               <span>{task?.activities?.length}</span>
             </div>
-            <div className='flex gap-1 items-center text-sm text-gray-600 '>
+            <div className='flex gap-1 items-center text-sm text-gray-600'>
               <MdAttachFile />
               <span>{task?.assets?.length}</span>
             </div>
-            <div className='flex gap-1 items-center text-sm text-gray-600 '>
+            <div className='flex gap-1 items-center text-sm text-gray-600'>
               <FaList />
               <span>0/{task?.subTasks?.length}</span>
             </div>
@@ -75,10 +106,7 @@ const TaskCard = ({ task }) => {
             {task?.team?.map((m, index) => (
               <div
                 key={index}
-                className={clsx(
-                  "w-7 h-7 rounded-full text-white flex items-center justify-center text-sm -mr-1",
-                  BGS[index % BGS?.length]
-                )}
+                className={clsx("w-7 h-7 rounded-full text-white flex items-center justify-center text-sm -mr-1", BGS[index % BGS?.length])}
               >
                 <UserInfo user={m} />
               </div>
@@ -86,35 +114,25 @@ const TaskCard = ({ task }) => {
           </div>
         </div>
 
-        {/* sub tasks */}
         {task?.subTasks?.length > 0 ? (
           <div className='py-4 border-t border-gray-200'>
-            <h5 className='text-base line-clamp-1 text-black'>
-              {task?.subTasks[0].title}
-            </h5>
-
+            <h5 className='text-base line-clamp-1 text-black'>{task?.subTasks[0].title}</h5>
             <div className='p-4 space-x-8'>
-              <span className='text-sm text-gray-600'>
-                {formatDate(new Date(task?.subTasks[0]?.date))}
-              </span>
-              <span className='bg-blue-600/10 px-3 py-1 rounded0full text-blue-700 font-medium'>
-                {task?.subTasks[0].tag}
-              </span>
+              <span className='text-sm text-gray-600'>{formatDate(new Date(task?.subTasks[0]?.date))}</span>
+              <span className='bg-blue-600/10 px-3 py-1 rounded-full text-blue-700 font-medium'>{task?.subTasks[0].tag}</span>
             </div>
           </div>
         ) : (
-          <>
-            <div className='py-4 border-t border-gray-200'>
-              <span className='text-gray-500'>No Sub Task</span>
-            </div>
-          </>
+          <div className='py-4 border-t border-gray-200'>
+            <span className='text-gray-500'>No Sub Task</span>
+          </div>
         )}
 
         <div className='w-full pb-2'>
           <button
             onClick={() => setOpen(true)}
-            disabled={user.isAdmin ? false : true}
-            className='w-full flex gap-4 items-center text-sm text-gray-500 font-semibold disabled:cursor-not-allowed disabled::text-gray-300'
+            disabled={!user?.isAdmin}
+            className='w-full flex gap-4 items-center text-sm text-gray-500 font-semibold disabled:cursor-not-allowed'
           >
             <IoMdAdd className='text-lg' />
             <span>ADD SUBTASK</span>
