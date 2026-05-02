@@ -17,7 +17,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"],
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "https://harmonious-quietude-production-a329.up.railway.app"],
     methods: ["GET", "POST", "DELETE", "PUT"],
     credentials: true,
   })
