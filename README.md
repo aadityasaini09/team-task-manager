@@ -1,158 +1,137 @@
-# Fullstack Task Manager (MERN)
+# TeamFlow - Team Task Manager
 
+A full-stack MERN application for managing team tasks with role-based access control.
 
+## 🔗 Live Demo
+Frontend: https://harmonious-quietude-production-7c53.up.railway.app
+Backend API: https://team-task-manager-production-f38c.up.railway.app
 
-# Overview
-The Cloud-Based Task Manager is a web application designed to streamline team task management. Built using the MERN stack (MongoDB, Express.js, React, and Node.js), this platform provides a user-friendly interface for efficient task assignment, tracking, and collaboration. The application caters to administrators and regular users, offering comprehensive features to enhance productivity and organization.
+## 🔐 Demo Credentials
 
+Admin Account:
+- Email: admin@test.com
+- Password: Admin1234
 
+Member Account:
+- Email: john@test.com
+- Password: Admin1234
 
-### Why/Problem?
-In a dynamic work environment, effective task management is crucial for team success. Traditional methods of task tracking through spreadsheets or manual systems can be cumbersome and prone to errors. The Cloud-Based Task Manager aims to address these challenges by providing a centralized platform for task management, enabling seamless collaboration and improved workflow efficiency.
+## 🚀 Features
 
+- Authentication (Signup/Login/Logout)
+- Role-Based Access Control (Admin/Member)
+- Task Creation, Assignment & Status Tracking
+- Dashboard with Stats & Overdue Highlights
+- Board View & List View for Tasks
+- Team Management (Add/Edit/Delete Members)
+- Priority Levels (High/Medium/Normal/Low)
+- Task Stage Tracking (Todo/In Progress/Completed)
+- Chart by Priority on Dashboard
 
+## 🛠️ Tech Stack
 
-### **Background**:
-With the rise of remote work and dispersed teams, there is a growing need for tools that facilitate effective communication and task coordination. The Cloud-Based Task Manager addresses this need by leveraging modern web technologies to create an intuitive and responsive task management solution. The MERN stack ensures scalability, while the integration of Redux Toolkit, Headless UI, and Tailwind CSS enhances user experience and performance.
+Frontend:
+- React.js (Vite)
+- Redux Toolkit
+- Tailwind CSS
+- React Router DOM
+- Recharts
 
+Backend:
+- Node.js
+- Express.js
+- MongoDB (Mongoose)
+- JWT Authentication
+- Cookie Parser
 
-### 
-## **Admin Features:**
-1. **User Management:**
-    - Create admin accounts.
-    - Add and manage team members.
+## 📁 Project Structure
 
-2. **Task Assignment:**
-    - Assign tasks to individual or multiple users.
-    - Update task details and status.
+taskmanager-main/
+├── client/          # React frontend
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── redux/
+└── server/          # Node.js backend
+    ├── controllers/
+    ├── middlewares/
+    ├── models/
+    └── routes/
 
-3. **Task Properties:**
-    - Label tasks as todo, in progress, or completed.
-    - Assign priority levels (high, medium, normal, low).
-    - Add and manage sub-tasks.
+## 🗄️ Database Schema
 
-4. **Asset Management:**
-    - Upload task assets, such as images.
+User:
+- name, email, password (bcrypt)
+- role, title, isAdmin, isActive
 
-5. **User Account Control:**
-    - Disable or activate user accounts.
-    - Permanently delete or trash tasks.
+Task:
+- title, date, priority, stage
+- team (ref: User)
+- activities, subTasks, assets
 
+## 🔌 API Endpoints
 
-## **User Features:**
-1. **Task Interaction:**
-    - Change task status (in progress or completed).
-    - View detailed task information.
+AUTH:
+POST   /api/user/register     - Register new user
+POST   /api/user/login        - Login user
+POST   /api/user/logout       - Logout user
 
-2. **Communication:**
-    - Add comments or chat to task activities.
+USERS:
+GET    /api/user/get-team     - Get all team members (Admin)
+PUT    /api/user/:id          - Update user profile
+DELETE /api/user/:id          - Delete user (Admin)
 
+TASKS:
+GET    /api/task              - Get all tasks
+POST   /api/task/create       - Create new task (Admin)
+PUT    /api/task/update/:id   - Update task (Admin)
+DELETE /api/task/delete-restore/:id - Delete task (Admin)
+GET    /api/task/dashboard    - Get dashboard stats
 
-## **General Features:**
-1. **Authentication and Authorization:**
-    - User login with secure authentication.
-    - Role-based access control.
+## 🔒 Role-Based Access Control
 
-2. **Profile Management:**
-    - Update user profiles.
+Admin:
+- Create, edit, delete tasks
+- Manage team members
+- View all dashboard stats
+- Access all routes
 
-3. **Password Management:**
-    - Change passwords securely.
+Member:
+- View assigned tasks
+- Update task status
+- View dashboard
 
-4. **Dashboard:**
-    - Provide a summary of user activities.
-    - Filter tasks into todo, in progress, or completed.
+## ⚙️ Local Setup
 
+1. Clone the repo:
+git clone https://github.com/aadityasaini09/team-task-manager.git
 
+2. Install server dependencies:
+cd server && npm install
 
+3. Create server/.env:
+MONGODB_URI=your_mongodb_uri
+JWT_SECRET=mysecretkey123
+PORT=8800
+NODE_ENV=development
 
-## **Technologies Used:**
-- **Frontend:**
-    - React (Vite)
-    - Redux Toolkit for State Management
-    - Headless UI
-    - Tailwind CSS
+4. Install client dependencies:
+cd client && npm install
 
+5. Create client/.env:
+VITE_APP_BASE_URL=http://localhost:8800
 
-- **Backend:**
-    - Node.js with Express.js
-    
-- **Database:**
-    - MongoDB for efficient and scalable data storage.
+6. Run the app:
+Terminal 1: cd server && npm start
+Terminal 2: cd client && npm run dev
 
+## 🚧 Coming Soon
+- Real-time notifications (Socket.io)
+- Advanced search functionality
+- Task export to CSV
+- Audit log for admin actions
+- File attachments for tasks
 
-The Cloud-Based Task Manager is an innovative solution that brings efficiency and organization to task management within teams. By harnessing the power of the MERN stack and modern frontend technologies, the platform provides a seamless experience for both administrators and users, fostering collaboration and productivity.
-
-&nbsp;
-
-## SETUP INSTRUCTIONS
-
-
-# Server Setup
-
-## Environment variables
-First, create the environment variables file `.env` in the server folder. The `.env` file contains the following environment variables:
-
-- MONGODB_URI = `your MongoDB URL`
-- JWT_SECRET = `any secret key - must be secured`
-- PORT = `8800` or any port number
-- NODE_ENV = `development`
-
-
-&nbsp;
-
-## Set Up MongoDB:
-
-1. Setting up MongoDB involves a few steps:
-    - Visit MongoDB Atlas Website
-        - Go to the MongoDB Atlas website: [https://www.mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas).
-
-    - Create an Account
-    - Log in to your MongoDB Atlas account.
-    - Create a New Cluster
-    - Choose a Cloud Provider and Region
-    - Configure Cluster Settings
-    - Create Cluster
-    - Wait for Cluster to Deploy
-    - Create Database User
-    - Set Up IP Whitelist
-    - Connect to Cluster
-    - Configure Your Application
-    - Test the Connection
-
-2. Create a new database and configure the `.env` file with the MongoDB connection URL. 
-
-## Steps to run server
-
-1. Open the project in any editor of choice.
-2. Navigate into the server directory `cd server`.
-3. Run `npm i` or `npm install` to install the packages.
-4. Run `npm start` to start the server.
-
-If configured correctly, you should see a message indicating that the server is running successfully and `Database Connected`.
-
-&nbsp;
-
-# Client Side Setup
-
-## Environment variables
-First, create the environment variables file `.env` in the client folder. The `.env` file contains the following environment variables:
-
-- VITE_APP_BASE_URL = `http://localhost:8800` #Note: Change the port 8800 to your port number.
-- VITE_APP_FIREBASE_API_KEY = `Firebase api key`
-
-## Steps to run client
-
-1. Navigate into the client directory `cd client`.
-2. Run `npm i` or `npm install` to install the packages.
-3. Run `npm start` to run the app on `http://localhost:3000`.
-4. Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-
-
-&nbsp;
-
-## For Support, Contact:
-
-- Email: codewavewithasante@gmail.com
-- Telegram Chat: [https://t.me/Codewave_with_asante](https://t.me/Codewave_with_asante)
+## 👨‍💻 Developer
+Aaditya Saini
+GitHub: https://github.com/aadityasaini09
