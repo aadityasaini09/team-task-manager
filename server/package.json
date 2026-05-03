@@ -11,6 +11,13 @@
   },
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  },
+  "overrides": {
+    "jwa": "^2.0.0",
+    "jws": "^4.0.0"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
