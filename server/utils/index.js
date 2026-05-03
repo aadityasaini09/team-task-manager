@@ -14,7 +14,7 @@ export const createJWT = (res, userId) => {
     expiresIn: "1d",
   });
 
-  const isProd = process.env.NODE_ENV === "production";
+  const isProd = true;
   res.cookie("token", token, {
     httpOnly: true,
     secure: isProd,
