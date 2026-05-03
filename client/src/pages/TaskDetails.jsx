@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import moment from "moment";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FaBug, FaTasks, FaThumbsUp, FaUser } from "react-icons/fa";
 import { GrInProgress } from "react-icons/gr";
 import {
@@ -14,28 +14,24 @@ import {
 import { RxActivityLog } from "react-icons/rx";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { tasks } from "../assets/data";
+import { useSelector } from "react-redux";
 import Tabs from "../components/Tabs";
 import { PRIOTITYSTYELS, TASK_TYPE, getInitials } from "../utils";
 import Loading from "../components/Loader";
 import Button from "../components/Button";
-
-const assets = [
-  "https://images.pexels.com/photos/2418664/pexels-photo-2418664.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-  "https://images.pexels.com/photos/8797307/pexels-photo-8797307.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-  "https://images.pexels.com/photos/2534523/pexels-photo-2534523.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-  "https://images.pexels.com/photos/804049/pexels-photo-804049.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-];
+import { apiUrl } from "../utils/apiBase.js";
 
 const ICONS = {
   high: <MdKeyboardDoubleArrowUp />,
   medium: <MdKeyboardArrowUp />,
+  normal: <MdKeyboardArrowDown />,
   low: <MdKeyboardArrowDown />,
 };
 
 const bgColor = {
   high: "bg-red-200",
   medium: "bg-yellow-200",
+  normal: "bg-gray-200",
   low: "bg-blue-200",
 };
 
@@ -47,7 +43,7 @@ const TABS = [
 const TASKTYPEICON = {
   commented: (
     <div className='w-10 h-10 rounded-full bg-gray-500 flex items-center justify-center text-white'>
-      <MdOutlineMessage />,
+      <MdOutlineMessage />
     </div>
   ),
   started: (
@@ -88,9 +84,59 @@ const act_types = [
 
 const TaskDetails = () => {
   const { id } = useParams();
+  const { user } = useSelector((state) => state.auth);
 
   const [selected, setSelected] = useState(0);
-  const task = tasks[3];
+  const [task, setTask] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadTask = useCallback(async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      const res = await fetch(apiUrl(`/task/${id}`), {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.token
+            ? { Authorization: `Bearer ${user.token}` }
+            : {}),
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message || "Could not load task");
+        setTask(null);
+        return;
+      }
+      setTask(data.task);
+    } catch (e) {
+      toast.error("Could not load task");
+      setTask(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, user?.token]);
+
+  useEffect(() => {
+    loadTask();
+  }, [loadTask]);
+
+  if (loading) {
+    return (
+      <div className='flex justify-center py-20'>
+        <Loading />
+      </div>
+    );
+  }
+
+  if (!task) {
+    return (
+      <p className='text-gray-500 p-6'>Task not found or you do not have access.</p>
+    );
+  }
+
+  const pri = task?.priority || "normal";
 
   return (
     <div className='w-full flex flex-col gap-3 mb-4 overflow-y-hidden'>
@@ -100,18 +146,17 @@ const TaskDetails = () => {
         {selected === 0 ? (
           <>
             <div className='w-full flex flex-col md:flex-row gap-5 2xl:gap-8 bg-white shadow-md p-8 overflow-y-auto'>
-              {/* LEFT */}
               <div className='w-full md:w-1/2 space-y-8'>
-                <div className='flex items-center gap-5'>
+                <div className='flex items-center gap-5 flex-wrap'>
                   <div
                     className={clsx(
                       "flex gap-1 items-center text-base font-semibold px-3 py-1 rounded-full",
-                      PRIOTITYSTYELS[task?.priority],
-                      bgColor[task?.priority]
+                      PRIOTITYSTYELS[pri] || PRIOTITYSTYELS.normal,
+                      bgColor[pri] || bgColor.normal
                     )}
                   >
-                    <span className='text-lg'>{ICONS[task?.priority]}</span>
-                    <span className='uppercase'>{task?.priority} Priority</span>
+                    <span className='text-lg'>{ICONS[pri] || ICONS.normal}</span>
+                    <span className='uppercase'>{pri} Priority</span>
                   </div>
 
                   <div className={clsx("flex items-center gap-2")}>
@@ -132,14 +177,14 @@ const TaskDetails = () => {
                 <div className='flex items-center gap-8 p-4 border-y border-gray-200'>
                   <div className='space-x-2'>
                     <span className='font-semibold'>Assets :</span>
-                    <span>{task?.assets?.length}</span>
+                    <span>{task?.assets?.length ?? 0}</span>
                   </div>
 
                   <span className='text-gray-400'>|</span>
 
                   <div className='space-x-2'>
                     <span className='font-semibold'>Sub-Task :</span>
-                    <span>{task?.subTasks?.length}</span>
+                    <span>{task?.subTasks?.length ?? 0}</span>
                   </div>
                 </div>
 
@@ -150,7 +195,7 @@ const TaskDetails = () => {
                   <div className='space-y-3'>
                     {task?.team?.map((m, index) => (
                       <div
-                        key={index}
+                        key={m._id || index}
                         className='flex gap-4 py-2 items-center border-t border-gray-200'
                       >
                         <div
@@ -159,7 +204,7 @@ const TaskDetails = () => {
                           }
                         >
                           <span className='text-center'>
-                            {getInitials(m?.name)}
+                            {getInitials(m?.name || "?")}
                           </span>
                         </div>
 
@@ -177,70 +222,116 @@ const TaskDetails = () => {
                     SUB-TASKS
                   </p>
                   <div className='space-y-8'>
-                    {task?.subTasks?.map((el, index) => (
-                      <div key={index} className='flex gap-3'>
-                        <div className='w-10 h-10 flex items-center justify-center rounded-full bg-violet-50-200'>
-                          <MdTaskAlt className='text-violet-600' size={26} />
-                        </div>
-
-                        <div className='space-y-1'>
-                          <div className='flex gap-2 items-center'>
-                            <span className='text-sm text-gray-500'>
-                              {new Date(el?.date).toDateString()}
-                            </span>
-
-                            <span className='px-2 py-0.5 text-center text-sm rounded-full bg-violet-100 text-violet-700 font-semibold'>
-                              {el?.tag}
-                            </span>
+                    {task?.subTasks?.length ? (
+                      task.subTasks.map((el, index) => (
+                        <div key={index} className='flex gap-3'>
+                          <div className='w-10 h-10 flex items-center justify-center rounded-full bg-violet-50-200'>
+                            <MdTaskAlt className='text-violet-600' size={26} />
                           </div>
 
-                          <p className='text-gray-700'>{el?.title}</p>
+                          <div className='space-y-1'>
+                            <div className='flex gap-2 items-center'>
+                              <span className='text-sm text-gray-500'>
+                                {el?.date
+                                  ? new Date(el.date).toDateString()
+                                  : ""}
+                              </span>
+
+                              <span className='px-2 py-0.5 text-center text-sm rounded-full bg-violet-100 text-violet-700 font-semibold'>
+                                {el?.tag}
+                              </span>
+                            </div>
+
+                            <p className='text-gray-700'>{el?.title}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className='text-gray-400 text-sm'>No sub-tasks yet</p>
+                    )}
                   </div>
                 </div>
               </div>
-              {/* RIGHT */}
+
               <div className='w-full md:w-1/2 space-y-8'>
                 <p className='text-lg font-semibold'>ASSETS</p>
 
                 <div className='w-full grid grid-cols-2 gap-4'>
-                  {task?.assets?.map((el, index) => (
-                    <img
-                      key={index}
-                      src={el}
-                      alt={task?.title}
-                      className='w-full rounded h-28 md:h-36 2xl:h-52 cursor-pointer transition-all duration-700 hover:scale-125 hover:z-50'
-                    />
-                  ))}
+                  {task?.assets?.length ? (
+                    task.assets.map((el, index) => (
+                      <img
+                        key={index}
+                        src={el}
+                        alt={task?.title}
+                        className='w-full rounded h-28 md:h-36 2xl:h-52 cursor-pointer transition-all duration-700 hover:scale-125 hover:z-50'
+                      />
+                    ))
+                  ) : (
+                    <p className='text-gray-400 text-sm col-span-2'>No assets</p>
+                  )}
                 </div>
               </div>
             </div>
           </>
         ) : (
-          <>
-            <Activities activity={task?.activities} id={id} />
-          </>
+          <Activities
+            activity={task?.activities}
+            id={id}
+            user={user}
+            onPosted={loadTask}
+          />
         )}
       </Tabs>
     </div>
   );
 };
 
-const Activities = ({ activity, id }) => {
+const Activities = ({ activity, id, user, onPosted }) => {
   const [selected, setSelected] = useState(act_types[0]);
   const [text, setText] = useState("");
-  const isLoading = false;
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async () => {};
+  const handleSubmit = async () => {
+    if (!text.trim()) {
+      toast.error("Enter a message");
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const res = await fetch(apiUrl(`/task/activity/${id}`), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.token
+            ? { Authorization: `Bearer ${user.token}` }
+            : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({ type: selected, activity: text }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message || "Failed to post");
+        return;
+      }
+      toast.success(data.message || "Posted");
+      setText("");
+      onPosted?.();
+    } catch (e) {
+      toast.error("Request failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const Card = ({ item }) => {
+    const icon =
+      TASKTYPEICON[item?.type] ?? TASKTYPEICON.commented;
     return (
       <div className='flex space-x-4'>
         <div className='flex flex-col items-center flex-shrink-0'>
           <div className='w-10 h-10 flex items-center justify-center'>
-            {TASKTYPEICON[item?.type]}
+            {icon}
           </div>
           <div className='w-full flex items-center'>
             <div className='w-0.5 bg-gray-300 h-full'></div>
@@ -248,10 +339,12 @@ const Activities = ({ activity, id }) => {
         </div>
 
         <div className='flex flex-col gap-y-1 mb-8'>
-          <p className='font-semibold'>{item?.by?.name}</p>
+          <p className='font-semibold'>{item?.by?.name || "User"}</p>
           <div className='text-gray-500 space-y-2'>
             <span className='capitalize'>{item?.type}</span>
-            <span className='text-sm'>{moment(item?.date).fromNow()}</span>
+            <span className='text-sm'>
+              {item?.date ? moment(item.date).fromNow() : ""}
+            </span>
           </div>
           <div className='text-gray-700'>{item?.activity}</div>
         </div>
@@ -265,13 +358,13 @@ const Activities = ({ activity, id }) => {
         <h4 className='text-gray-600 font-semibold text-lg mb-5'>Activities</h4>
 
         <div className='w-full'>
-          {activity?.map((el, index) => (
-            <Card
-              key={index}
-              item={el}
-              isConnected={index < activity.length - 1}
-            />
-          ))}
+          {activity?.length ? (
+            activity.map((el, index) => (
+              <Card key={el._id || index} item={el} />
+            ))
+          ) : (
+            <p className='text-gray-400 text-sm'>No activities yet</p>
+          )}
         </div>
       </div>
 
@@ -280,13 +373,14 @@ const Activities = ({ activity, id }) => {
           Add Activity
         </h4>
         <div className='w-full flex flex-wrap gap-5'>
-          {act_types.map((item, index) => (
+          {act_types.map((item) => (
             <div key={item} className='flex gap-2 items-center'>
               <input
-                type='checkbox'
+                type='radio'
+                name='act-type'
                 className='w-4 h-4'
-                checked={selected === item ? true : false}
-                onChange={(e) => setSelected(item)}
+                checked={selected === item}
+                onChange={() => setSelected(item)}
               />
               <p>{item}</p>
             </div>
@@ -313,4 +407,5 @@ const Activities = ({ activity, id }) => {
     </div>
   );
 };
+
 export default TaskDetails;

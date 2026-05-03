@@ -4,6 +4,10 @@ import User from "../models/user.js";
 const protectRoute = async (req, res, next) => {
   try {
     let token = req.cookies?.token;
+    const authHeader = req.headers.authorization;
+    if (!token && authHeader?.startsWith("Bearer ")) {
+      token = authHeader.slice(7);
+    }
 
     if (token) {
       const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
@@ -11,6 +15,12 @@ const protectRoute = async (req, res, next) => {
       const resp = await User.findById(decodedToken.userId).select(
         "isAdmin email"
       );
+
+      if (!resp) {
+        return res
+          .status(401)
+          .json({ status: false, message: "Not authorized. Try login again." });
+      }
 
       req.user = {
         email: resp.email,

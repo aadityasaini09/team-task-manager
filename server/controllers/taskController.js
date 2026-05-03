@@ -54,20 +54,22 @@ export const duplicateTask = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const task = await Task.findById(id);
+    const task = await Task.findById(id).lean();
+    if (!task) {
+      return res.status(404).json({ status: false, message: "Task not found" });
+    }
 
     const newTask = await Task.create({
-      ...task,
-      title: task.title + " - Duplicate",
+      title: `${task.title} - Duplicate`,
+      team: task.team,
+      subTasks: task.subTasks || [],
+      assets: task.assets || [],
+      priority: task.priority,
+      stage: task.stage,
+      date: task.date,
+      activities: [],
+      isTrashed: false,
     });
-
-    newTask.team = task.team;
-    newTask.subTasks = task.subTasks;
-    newTask.assets = task.assets;
-    newTask.priority = task.priority;
-    newTask.stage = task.stage;
-
-    await newTask.save();
 
     //alert users of the task
     let text = "New task has been assigned to you";
@@ -79,7 +81,9 @@ export const duplicateTask = async (req, res) => {
       text +
       ` The task priority is set a ${
         task.priority
-      } priority, so check and act accordingly. The task date is ${task.date.toDateString()}. Thank you!!!`;
+      } priority, so check and act accordingly. The task date is ${new Date(
+        task.date
+      ).toDateString()}. Thank you!!!`;
 
     await Notice.create({
       team: task.team,
@@ -96,16 +100,40 @@ export const duplicateTask = async (req, res) => {
   }
 };
 
+const normalizeActivityType = (raw) => {
+  const t = String(raw || "")
+    .trim()
+    .toLowerCase();
+  const map = {
+    started: "started",
+    completed: "completed",
+    commented: "commented",
+    bug: "bug",
+    assigned: "assigned",
+    "in progress": "in progress",
+  };
+  return map[t] || "commented";
+};
+
 export const postTaskActivity = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.user;
+    const { userId, isAdmin } = req.user;
     const { type, activity } = req.body;
 
     const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ status: false, message: "Task not found" });
+    }
+    if (
+      !isAdmin &&
+      !task.team.some((m) => m.toString() === userId.toString())
+    ) {
+      return res.status(403).json({ status: false, message: "Not allowed" });
+    }
 
     const data = {
-      type,
+      type: normalizeActivityType(type),
       activity,
       by: userId,
     };
@@ -200,11 +228,17 @@ export const dashboardStatistics = async (req, res) => {
 export const getTasks = async (req, res) => {
   try {
     const { stage, isTrashed } = req.query;
+    const { userId, isAdmin } = req.user;
 
-    let query = { isTrashed: isTrashed ? true : false };
+    const trashed = String(isTrashed) === "true";
+    let query = { isTrashed: trashed };
 
     if (stage) {
       query.stage = stage;
+    }
+
+    if (!isAdmin) {
+      query.team = userId;
     }
 
     let queryResult = Task.find(query)
@@ -229,6 +263,7 @@ export const getTasks = async (req, res) => {
 export const getTask = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId, isAdmin } = req.user;
 
     const task = await Task.findById(id)
       .populate({
@@ -239,6 +274,16 @@ export const getTask = async (req, res) => {
         path: "activities.by",
         select: "name",
       });
+
+    if (!task) {
+      return res.status(404).json({ status: false, message: "Task not found" });
+    }
+    if (
+      !isAdmin &&
+      !task.team.some((m) => m._id.toString() === userId.toString())
+    ) {
+      return res.status(403).json({ status: false, message: "Not allowed" });
+    }
 
     res.status(200).json({
       status: true,
@@ -280,9 +325,26 @@ export const createSubTask = async (req, res) => {
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
+    const { userId, isAdmin } = req.user;
     const { title, date, team, stage, priority, assets } = req.body;
 
     const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ status: false, message: "Task not found" });
+    }
+
+    const onTeam = task.team.some((m) => m.toString() === userId.toString());
+
+    if (!isAdmin) {
+      if (!onTeam) {
+        return res.status(403).json({ status: false, message: "Not allowed" });
+      }
+      task.stage = String(stage).toLowerCase();
+      await task.save();
+      return res
+        .status(200)
+        .json({ status: true, message: "Task updated successfully." });
+    }
 
     task.title = title;
     task.date = date;
@@ -295,7 +357,7 @@ export const updateTask = async (req, res) => {
 
     res
       .status(200)
-      .json({ status: true, message: "Task duplicated successfully." });
+      .json({ status: true, message: "Task updated successfully." });
   } catch (error) {
     console.log(error);
     return res.status(400).json({ status: false, message: error.message });
@@ -333,9 +395,11 @@ export const deleteRestoreTask = async (req, res) => {
       await Task.deleteMany({ isTrashed: true });
     } else if (actionType === "restore") {
       const resp = await Task.findById(id);
-
+      if (!resp) {
+        return res.status(404).json({ status: false, message: "Task not found" });
+      }
       resp.isTrashed = false;
-      resp.save();
+      await resp.save();
     } else if (actionType === "restoreAll") {
       await Task.updateMany(
         { isTrashed: true },

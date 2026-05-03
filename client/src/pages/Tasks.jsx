@@ -12,6 +12,7 @@ import BoardView from "../components/BoardView";
 import Table from "../components/task/Table";
 import AddTask from "../components/task/AddTask";
 import { useSelector } from "react-redux";
+import { apiUrl } from "../utils/apiBase.js";
 
 const TABS = [
   { title: "Board View", icon: <MdGridView /> },
@@ -39,8 +40,8 @@ const Tasks = () => {
     try {
       setLoading(true);
       const url = status
-        ? `https://team-task-manager-production-f811.up.railway.app/api/task?stage=${status}`
-        : `https://team-task-manager-production-f811.up.railway.app/api/task`;
+        ? apiUrl(`/task?stage=${encodeURIComponent(status)}`)
+        : apiUrl("/task");
 
       const res = await fetch(url, {
         headers: {

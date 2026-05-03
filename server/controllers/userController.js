@@ -1,4 +1,3 @@
-import { response } from "express";
 import User from "../models/user.js";
 import { createJWT } from "../utils/index.js";
 import Notice from "../models/notification.js";
@@ -26,11 +25,12 @@ export const registerUser = async (req, res) => {
     });
 
     if (user) {
-      isAdmin ? createJWT(res, user._id) : null;
+      const token = isAdmin ? createJWT(res, user._id) : null;
 
-      user.password = undefined;
+      const safe = user.toObject ? user.toObject() : { ...user };
+      delete safe.password;
 
-      res.status(201).json(user);
+      res.status(201).json(token ? { ...safe, token } : safe);
     } else {
       return res
         .status(400)
@@ -64,11 +64,12 @@ export const loginUser = async (req, res) => {
     const isMatch = await user.matchPassword(password);
 
     if (user && isMatch) {
-      createJWT(res, user._id);
+      const token = createJWT(res, user._id);
 
-      user.password = undefined;
+      const safe = user.toObject ? user.toObject() : { ...user };
+      delete safe.password;
 
-      res.status(200).json(user);
+      res.status(200).json({ ...safe, token });
     } else {
       return res
         .status(401)
@@ -82,8 +83,11 @@ export const loginUser = async (req, res) => {
 
 export const logoutUser = async (req, res) => {
   try {
+    const isProd = process.env.NODE_ENV === "production";
     res.cookie("token", "", {
-      htttpOnly: true,
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
       expires: new Date(0),
     });
 

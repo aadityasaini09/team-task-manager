@@ -3,27 +3,52 @@ import ModalWrapper from "../ModalWrapper";
 import { Dialog } from "@headlessui/react";
 import Textbox from "../Textbox";
 import Button from "../Button";
+import { toast } from "sonner";
+import { useSelector } from "react-redux";
+import { apiUrl } from "../../utils/apiBase.js";
 
 const AddSubTask = ({ open, setOpen, id }) => {
+  const { user } = useSelector((state) => state.auth);
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm();
 
-  // const [addSbTask] = useCreateSubTaskMutation();
-
   const handleOnSubmit = async (data) => {
-    // try {
-    //   const res = await addSbTask({ data, id }).unwrap();
-    //   toast.success(res.message);
-    //   setTimeout(() => {
-    //     setOpen(false);
-    //   }, 500);
-    // } catch (err) {
-    //   console.log(err);
-    //   toast.error(err?.data?.message || err.error);
-    // }
+    if (!id) {
+      toast.error("Missing task");
+      return;
+    }
+    try {
+      const res = await fetch(apiUrl(`/task/create-subtask/${id}`), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.token
+            ? { Authorization: `Bearer ${user.token}` }
+            : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          title: data.title,
+          date: data.date,
+          tag: data.tag,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result?.message || "Failed to add sub-task");
+        return;
+      }
+      toast.success(result?.message || "Sub-task added");
+      reset();
+      setOpen(false);
+      window.location.reload();
+    } catch (err) {
+      toast.error("Something went wrong");
+    }
   };
 
   return (

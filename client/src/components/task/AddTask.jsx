@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ModalWrapper from "../ModalWrapper";
 import { Dialog } from "@headlessui/react";
 import Textbox from "../Textbox";
@@ -8,15 +8,30 @@ import SelectList from "../SelectList";
 import { BiImages } from "react-icons/bi";
 import Button from "../Button";
 import { useSelector } from "react-redux";
+import { apiUrl } from "../../utils/apiBase.js";
+import { toast } from "sonner";
 
 const LISTS = ["TODO", "IN PROGRESS", "COMPLETED"];
 const PRIORIRY = ["HIGH", "MEDIUM", "NORMAL", "LOW"];
 
-const AddTask = ({ open, setOpen, refetch }) => {
+const apiStageToList = (stage) => {
+  if (!stage) return LISTS[0];
+  if (stage === "in progress") return "IN PROGRESS";
+  return stage.toUpperCase();
+};
+
+const apiPriorityToList = (p) => {
+  if (!p) return PRIORIRY[2];
+  return p.toUpperCase();
+};
+
+const AddTask = ({ open, setOpen, refetch, task: existingTask }) => {
   const { user } = useSelector((state) => state.auth);
+  const isEdit = Boolean(existingTask?._id);
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm();
 
@@ -25,6 +40,34 @@ const AddTask = ({ open, setOpen, refetch }) => {
   const [priority, setPriority] = useState(PRIORIRY[2]);
   const [assets, setAssets] = useState([]);
   const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !existingTask) return;
+    reset({
+      title: existingTask.title,
+      date: existingTask.date
+        ? new Date(existingTask.date).toISOString().slice(0, 10)
+        : "",
+    });
+    setStage(apiStageToList(existingTask.stage));
+    setPriority(apiPriorityToList(existingTask.priority));
+    setTeam(
+      (existingTask.team || []).map((m) =>
+        typeof m === "object" ? m._id : m
+      )
+    );
+    setAssets(existingTask.assets || []);
+  }, [open, existingTask, reset]);
+
+  useEffect(() => {
+    if (!open && !isEdit) {
+      reset({ title: "", date: "" });
+      setTeam([]);
+      setStage(LISTS[0]);
+      setPriority(PRIORIRY[2]);
+      setAssets([]);
+    }
+  }, [open, isEdit, reset]);
 
   const submitHandler = async (data) => {
     try {
@@ -35,14 +78,19 @@ const AddTask = ({ open, setOpen, refetch }) => {
         team,
         stage: stage.toLowerCase(),
         priority: priority.toLowerCase(),
-        assets,
+        assets: Array.isArray(assets) ? assets : [],
       };
 
-      const res = await fetch("https://team-task-manager-production-f811.up.railway.app/api/task/create", {
-        method: "POST",
+      const url = isEdit
+        ? apiUrl(`/task/update/${existingTask._id}`)
+        : apiUrl("/task/create");
+      const res = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.token}`,
+          ...(user?.token
+            ? { Authorization: `Bearer ${user.token}` }
+            : {}),
         },
         credentials: "include",
         body: JSON.stringify(taskData),
@@ -51,15 +99,18 @@ const AddTask = ({ open, setOpen, refetch }) => {
       const result = await res.json();
 
       if (res.ok) {
-        alert("Task created successfully!");
+        toast.success(
+          result?.message ||
+            (isEdit ? "Task updated" : "Task created successfully!")
+        );
         setOpen(false);
         refetch && refetch();
+        if (!refetch) window.location.reload();
       } else {
-        alert(result?.message || "Failed to create task!");
+        toast.error(result?.message || "Request failed");
       }
     } catch (error) {
-      console.log(error);
-      alert("Something went wrong!");
+      toast.error("Something went wrong");
     } finally {
       setUploading(false);
     }
@@ -77,7 +128,7 @@ const AddTask = ({ open, setOpen, refetch }) => {
             as='h2'
             className='text-base font-bold leading-6 text-gray-900 mb-4'
           >
-            ADD TASK
+            {isEdit ? "EDIT TASK" : "ADD TASK"}
           </Dialog.Title>
 
           <div className='mt-2 flex flex-col gap-6'>
@@ -144,7 +195,7 @@ const AddTask = ({ open, setOpen, refetch }) => {
             <div className='bg-gray-50 py-6 sm:flex sm:flex-row-reverse gap-4'>
               {uploading ? (
                 <span className='text-sm py-2 text-red-500'>
-                  Creating task...
+                  {isEdit ? "Saving…" : "Creating task…"}
                 </span>
               ) : (
                 <Button

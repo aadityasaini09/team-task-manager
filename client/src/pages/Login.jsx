@@ -5,6 +5,7 @@ import Textbox from "../components/Textbox";
 import Button from "../components/Button";
 import { useSelector, useDispatch } from "react-redux";
 import { setCredentials } from "../redux/slices/authSlice";
+import { apiUrl } from "../utils/apiBase.js";
 
 const Login = () => {
   const { user } = useSelector((state) => state.auth);
@@ -19,7 +20,7 @@ const Login = () => {
 
   const submitHandler = async (data) => {
     try {
-      const response = await fetch("https://team-task-manager-production-f811.up.railway.app/api/user/login", {
+      const response = await fetch(apiUrl("/user/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

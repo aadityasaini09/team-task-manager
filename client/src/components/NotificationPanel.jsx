@@ -1,46 +1,12 @@
 import { Popover, Transition } from "@headlessui/react";
 import moment from "moment";
-import { Fragment, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { BiSolidMessageRounded } from "react-icons/bi";
 import { HiBellAlert } from "react-icons/hi2";
 import { IoIosNotificationsOutline } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { apiUrl } from "../utils/apiBase.js";
 
-const data = [
-  {
-    _id: "65c5bbf3787832cf99f28e6d",
-    team: [
-      "65c202d4aa62f32ffd1303cc",
-      "65c27a0e18c0a1b750ad5cad",
-      "65c30b96e639681a13def0b5",
-    ],
-    text: "New task has been assigned to you and 2 others. The task priority is set a normal priority, so check and act accordingly. The task date is Thu Feb 29 2024. Thank you!!!",
-    task: null,
-    notiType: "alert",
-    isRead: [],
-    createdAt: "2024-02-09T05:45:23.353Z",
-    updatedAt: "2024-02-09T05:45:23.353Z",
-    __v: 0,
-  },
-  {
-    _id: "65c5f12ab5204a81bde866ab",
-    team: [
-      "65c202d4aa62f32ffd1303cc",
-      "65c30b96e639681a13def0b5",
-      "65c317360fd860f958baa08e",
-    ],
-    text: "New task has been assigned to you and 2 others. The task priority is set a high priority, so check and act accordingly. The task date is Fri Feb 09 2024. Thank you!!!",
-    task: {
-      _id: "65c5f12ab5204a81bde866a9",
-      title: "Test task",
-    },
-    notiType: "alert",
-    isRead: [],
-    createdAt: "2024-02-09T09:32:26.810Z",
-    updatedAt: "2024-02-09T09:32:26.810Z",
-    __v: 0,
-  },
-];
 const ICONS = {
   alert: (
     <HiBellAlert className='h-5 w-5 text-gray-600 group-hover:text-indigo-600' />
@@ -51,14 +17,47 @@ const ICONS = {
 };
 
 const NotificationPanel = () => {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
+  const [data, setData] = useState([]);
+  const navigate = useNavigate();
 
-  //  const { data, refetch } = useGetNotificationsQuery();
-  //  const [markAsRead] = useMarkNotiAsReadMutation();
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(apiUrl("/user/notifications"), {
+        credentials: "include",
+      });
+      const json = await res.json();
+      if (!res.ok) return;
+      setData(Array.isArray(json) ? json : []);
+    } catch (e) {
+      /* ignore */
+    }
+  }, []);
 
-  const readHandler = () => {};
-  const viewHandler = () => {};
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const readHandler = async (isReadType, id) => {
+    try {
+      const q =
+        isReadType === "all"
+          ? "?isReadType=all"
+          : `?isReadType=one&id=${encodeURIComponent(id)}`;
+      await fetch(apiUrl(`/user/read-noti${q}`), {
+        method: "PUT",
+        credentials: "include",
+      });
+      load();
+    } catch (e) {
+      /* ignore */
+    }
+  };
+
+  const viewHandler = (item) => {
+    if (item?.task?._id) {
+      navigate(`/task/${item.task._id}`);
+    }
+  };
 
   const callsToAction = [
     { name: "Cancel", href: "#", icon: "" },
@@ -73,7 +72,10 @@ const NotificationPanel = () => {
   return (
     <>
       <Popover className='relative'>
-        <Popover.Button className='inline-flex items-center outline-none'>
+        <Popover.Button
+          className='inline-flex items-center outline-none'
+          onClick={() => load()}
+        >
           <div className='w-8 h-8 flex items-center justify-center text-gray-800 relative'>
             <IoIosNotificationsOutline className='text-2xl' />
             {data?.length > 0 && (
@@ -104,11 +106,11 @@ const NotificationPanel = () => {
                         className='group relative flex gap-x-4 rounded-lg p-4 hover:bg-gray-50'
                       >
                         <div className='mt-1 h-8 w-8 flex items-center justify-center rounded-lg bg-gray-200 group-hover:bg-white'>
-                          {ICONS[item.notiType]}
+                          {ICONS[item.notiType] || ICONS.alert}
                         </div>
 
                         <div
-                          className='cursor-pointer'
+                          className='cursor-pointer flex-1'
                           onClick={() => viewHandler(item)}
                         >
                           <div className='flex items-center gap-3 font-semibold text-gray-900 capitalize'>
@@ -117,7 +119,7 @@ const NotificationPanel = () => {
                               {moment(item.createdAt).fromNow()}
                             </span>
                           </div>
-                          <p className='line-clamp-1 mt-1 text-gray-600'>
+                          <p className='line-clamp-2 mt-1 text-gray-600'>
                             {item.text}
                           </p>
                         </div>
@@ -129,8 +131,15 @@ const NotificationPanel = () => {
                     {callsToAction.map((item) => (
                       <Link
                         key={item.name}
+                        to={item.href}
                         onClick={
-                          item?.onClick ? () => item.onClick() : () => close()
+                          item?.onClick
+                            ? (e) => {
+                                e.preventDefault();
+                                item.onClick();
+                                close();
+                              }
+                            : () => close()
                         }
                         className='flex items-center justify-center gap-x-2.5 p-3 font-semibold text-blue-600 hover:bg-gray-100'
                       >

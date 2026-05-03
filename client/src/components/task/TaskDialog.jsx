@@ -9,6 +9,7 @@ import { Menu, Transition } from "@headlessui/react";
 import AddTask from "./AddTask";
 import AddSubTask from "./AddSubTask";
 import ConfirmatioDialog from "../Dialogs";
+import { apiUrl } from "../../utils/apiBase.js";
 
 const TaskDialog = ({ task }) => {
   const [open, setOpen] = useState(false);
@@ -19,8 +20,9 @@ const TaskDialog = ({ task }) => {
 
   const duplicateHandler = async () => {
   try {
-    const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/task/duplicate/${task._id}`, {
+    const res = await fetch(apiUrl(`/task/duplicate/${task._id}`), {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
     if (res.ok) window.location.reload();
@@ -35,8 +37,9 @@ const deleteClicks = () => {
 
 const deleteHandler = async () => {
   try {
-    const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/task/delete-restore/${task._id}?actionType=delete`, {
+    const res = await fetch(apiUrl(`/task/delete-restore/${task._id}?actionType=delete`), {
       method: "DELETE",
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
     if (res.ok) {
@@ -67,7 +70,7 @@ const deleteHandler = async () => {
     {
       label: "Duplicate",
       icon: <HiDuplicate className='mr-2 h-5 w-5' aria-hidden='true' />,
-      onClick: () => duplicateHanlder(),
+      onClick: () => duplicateHandler(),
     },
   ];
 
@@ -134,10 +137,10 @@ const deleteHandler = async () => {
         open={openEdit}
         setOpen={setOpenEdit}
         task={task}
-        key={new Date().getTime()}
+        key={task._id}
       />
 
-      <AddSubTask open={open} setOpen={setOpen} />
+      <AddSubTask open={open} setOpen={setOpen} id={task._id} />
 
       <ConfirmatioDialog
         open={openDialog}

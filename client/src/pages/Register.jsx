@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { apiUrl } from "../utils/apiBase.js";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import Textbox from "../components/Textbox";
@@ -18,7 +19,7 @@ const Register = () => {
 
   const submitHandler = async (data) => {
     try {
-      const response = await fetch("https://team-task-manager-production-f811.up.railway.app/api/user/register", {
+      const response = await fetch(apiUrl("/user/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

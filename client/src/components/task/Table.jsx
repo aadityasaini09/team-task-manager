@@ -13,6 +13,7 @@ import { FaList } from "react-icons/fa";
 import UserInfo from "../UserInfo";
 import Button from "../Button";
 import ConfirmatioDialog from "../Dialogs";
+import { apiUrl } from "../../utils/apiBase.js";
 
 const ICONS = {
   high: <MdKeyboardDoubleArrowUp />,
@@ -31,7 +32,7 @@ const Table = ({ tasks }) => {
 
   const deleteHandler = async () => {
   try {
-    const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/task/delete-restore/${selected}?actionType=delete`, {
+    const res = await fetch(apiUrl(`/task/delete-restore/${selected}?actionType=delete`), {
       method: "DELETE",
       credentials: "include",
     });

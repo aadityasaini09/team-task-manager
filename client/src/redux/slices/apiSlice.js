@@ -1,8 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { API_ROOT } from "../../utils/apiBase.js";
 
-const API_URI = import.meta.env.VITE_APP_BASE_URL || "http://localhost:5000";
-
-const baseQuery = fetchBaseQuery({ baseUrl: `${API_URI}/api` });
+const baseQuery = fetchBaseQuery({ baseUrl: API_ROOT });
 
 export const apiSlice = createApi({
   baseQuery,

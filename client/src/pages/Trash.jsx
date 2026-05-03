@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   MdDelete,
   MdKeyboardArrowDown,
@@ -7,12 +7,12 @@ import {
   MdKeyboardDoubleArrowUp,
   MdOutlineRestore,
 } from "react-icons/md";
-import { tasks } from "../assets/data";
+import { toast } from "sonner";
 import Title from "../components/Title";
 import Button from "../components/Button";
 import { PRIOTITYSTYELS, TASK_TYPE } from "../utils";
-import AddUser from "../components/AddUser";
 import ConfirmatioDialog from "../components/Dialogs";
+import { apiUrl } from "../utils/apiBase.js";
 
 const ICONS = {
   high: <MdKeyboardDoubleArrowUp />,
@@ -22,14 +22,38 @@ const ICONS = {
 
 const Trash = () => {
   const [openDialog, setOpenDialog] = useState(false);
-  const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState(null);
   const [type, setType] = useState("delete");
   const [selected, setSelected] = useState("");
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchTrashed = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(apiUrl("/task?isTrashed=true"), {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.message || "Failed to load trash");
+        return;
+      }
+      setTasks(data?.tasks || []);
+    } catch (e) {
+      toast.error("Could not load trashed tasks");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTrashed();
+  }, [fetchTrashed]);
 
   const deleteAllClick = () => {
     setType("deleteAll");
-    setMsg("Do you want to permenantly delete all items?");
+    setMsg("Do you want to permanently delete all items?");
     setOpenDialog(true);
   };
 
@@ -42,6 +66,7 @@ const Trash = () => {
   const deleteClick = (id) => {
     setType("delete");
     setSelected(id);
+    setMsg("Permanently delete this task?");
     setOpenDialog(true);
   };
 
@@ -52,6 +77,44 @@ const Trash = () => {
     setOpenDialog(true);
   };
 
+  const deleteRestoreHandler = async () => {
+    try {
+      let res;
+      if (type === "delete") {
+        res = await fetch(
+          apiUrl(`/task/delete-restore/${selected}?actionType=delete`),
+          { method: "DELETE", credentials: "include" }
+        );
+      } else if (type === "restore") {
+        res = await fetch(
+          apiUrl(`/task/delete-restore/${selected}?actionType=restore`),
+          { method: "DELETE", credentials: "include" }
+        );
+      } else if (type === "deleteAll") {
+        res = await fetch(apiUrl("/task/delete-restore?actionType=deleteAll"), {
+          method: "DELETE",
+          credentials: "include",
+        });
+      } else if (type === "restoreAll") {
+        res = await fetch(
+          apiUrl("/task/delete-restore?actionType=restoreAll"),
+          { method: "DELETE", credentials: "include" }
+        );
+      }
+      const data = res ? await res.json() : {};
+      if (!res?.ok) {
+        toast.error(data.message || "Operation failed");
+        return;
+      }
+      toast.success(data.message || "Done");
+      setOpenDialog(false);
+      setMsg(null);
+      fetchTrashed();
+    } catch (e) {
+      toast.error("Request failed");
+    }
+  };
+
   const TableHeader = () => (
     <thead className='border-b border-gray-300'>
       <tr className='text-black  text-left'>
@@ -59,6 +122,7 @@ const Trash = () => {
         <th className='py-2'>Priority</th>
         <th className='py-2'>Stage</th>
         <th className='py-2 line-clamp-1'>Modified On</th>
+        <th className='py-2' />
       </tr>
     </thead>
   );
@@ -103,6 +167,12 @@ const Trash = () => {
     </tr>
   );
 
+  if (loading) {
+    return (
+      <div className='p-8 text-center text-gray-500'>Loading trash…</div>
+    );
+  }
+
   return (
     <>
       <div className='w-full md:px-1 px-0 mb-6'>
@@ -129,16 +199,20 @@ const Trash = () => {
             <table className='w-full mb-5'>
               <TableHeader />
               <tbody>
-                {tasks?.map((tk, id) => (
-                  <TableRow key={id} item={tk} />
-                ))}
+                {tasks?.length ? (
+                  tasks.map((tk) => <TableRow key={tk._id} item={tk} />)
+                ) : (
+                  <tr>
+                    <td colSpan={5} className='py-8 text-center text-gray-500'>
+                      No trashed tasks
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
-
-      {/* <AddUser open={open} setOpen={setOpen} /> */}
 
       <ConfirmatioDialog
         open={openDialog}

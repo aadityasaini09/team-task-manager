@@ -14,11 +14,13 @@ import { Chart } from "../components/Chart";
 import { BGS, PRIOTITYSTYELS, TASK_TYPE, getInitials } from "../utils";
 import UserInfo from "../components/UserInfo";
 import { useSelector } from "react-redux";
+import { apiUrl } from "../utils/apiBase.js";
 
 const TaskTable = ({ tasks }) => {
   const ICONS = {
     high: <MdKeyboardDoubleArrowUp />,
     medium: <MdKeyboardArrowUp />,
+    normal: <MdKeyboardArrowDown />,
     low: <MdKeyboardArrowDown />,
   };
 
@@ -49,8 +51,13 @@ const TaskTable = ({ tasks }) => {
         </td>
         <td className='py-2'>
           <div className='flex gap-1 items-center'>
-            <span className={clsx("text-lg", PRIOTITYSTYELS[task.priority])}>
-              {ICONS[task.priority]}
+            <span
+              className={clsx(
+                "text-lg",
+                PRIOTITYSTYELS[task.priority] || PRIOTITYSTYELS.normal
+              )}
+            >
+              {ICONS[task.priority] || ICONS.normal}
             </span>
             <span className='capitalize'>{task.priority}</span>
           </div>
@@ -154,7 +161,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const res = await fetch("https://team-task-manager-production-f811.up.railway.app/api/task/dashboard", {
+        const res = await fetch(apiUrl("/task/dashboard"), {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
         });

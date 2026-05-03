@@ -14,10 +14,12 @@ import { FaList } from "react-icons/fa";
 import UserInfo from "./UserInfo";
 import { IoMdAdd } from "react-icons/io";
 import AddSubTask from "./task/AddSubTask";
+import { apiUrl } from "../utils/apiBase.js";
 
 const ICONS = {
   high: <MdKeyboardDoubleArrowUp />,
   medium: <MdKeyboardArrowUp />,
+  normal: <MdKeyboardArrowDown />,
   low: <MdKeyboardArrowDown />,
 };
 
@@ -31,17 +33,24 @@ const TaskCard = ({ task, refetch }) => {
   const handleStageChange = async (newStage) => {
     try {
       setUpdating(true);
-      const res = await fetch(`https://team-task-manager-production-f811.up.railway.app/api/task/update/${task._id}`, {
+      const res = await fetch(apiUrl(`/task/update/${task._id}`), {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.token
+            ? { Authorization: `Bearer ${user.token}` }
+            : {}),
+        },
         credentials: "include",
         body: JSON.stringify({
           title: task.title,
           date: task.date,
-          team: task.team,
+          team: (task.team || []).map((m) =>
+            typeof m === "object" && m?._id ? m._id : m
+          ),
           stage: newStage,
           priority: task.priority,
-          assets: task.assets,
+          assets: task.assets || [],
         }),
       });
       if (res.ok) {
@@ -58,8 +67,15 @@ const TaskCard = ({ task, refetch }) => {
     <>
       <div className='w-full h-fit bg-white shadow-md p-4 rounded'>
         <div className='w-full flex justify-between'>
-          <div className={clsx("flex flex-1 gap-1 items-center text-sm font-medium", PRIOTITYSTYELS[task?.priority])}>
-            <span className='text-lg'>{ICONS[task?.priority]}</span>
+          <div
+            className={clsx(
+              "flex flex-1 gap-1 items-center text-sm font-medium",
+              PRIOTITYSTYELS[task?.priority] || PRIOTITYSTYELS.normal
+            )}
+          >
+            <span className='text-lg'>
+              {ICONS[task?.priority] || ICONS.normal}
+            </span>
             <span className='uppercase'>{task?.priority} Priority</span>
           </div>
           {user?.isAdmin && <TaskDialog task={task} />}

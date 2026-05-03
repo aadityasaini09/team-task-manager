@@ -4,6 +4,7 @@ import { BsChevronExpand } from "react-icons/bs";
 import clsx from "clsx";
 import { getInitials } from "../../utils";
 import { MdCheck } from "react-icons/md";
+import { apiUrl } from "../../utils/apiBase.js";
 
 const UserList = ({ setTeam, team }) => {
   const [data, setData] = useState([]);
@@ -11,7 +12,7 @@ const UserList = ({ setTeam, team }) => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("https://team-task-manager-production-f811.up.railway.app/api/user/get-team", {
+      const res = await fetch(apiUrl("/user/get-team"), {
         credentials: "include",
       });
       const users = await res.json();
@@ -28,6 +29,14 @@ const UserList = ({ setTeam, team }) => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (!data?.length || !team?.length) return;
+    const sel = data.filter((u) =>
+      team.some((id) => String(id) === String(u._id))
+    );
+    if (sel.length) setSelectedUsers(sel);
+  }, [data, team]);
 
   const handleChange = (el) => {
     setSelectedUsers(el);

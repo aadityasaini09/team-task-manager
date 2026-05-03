@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getInitials } from "../utils";
 import { logout } from "../redux/slices/authSlice";
+import { apiUrl } from "../utils/apiBase.js";
 
 const UserAvatar = () => {
   const [open, setOpen] = useState(false);
@@ -14,7 +15,15 @@ const UserAvatar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const logoutHandler = () => {
+  const logoutHandler = async () => {
+    try {
+      await fetch(apiUrl("/user/logout"), {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (e) {
+      /* still clear client session */
+    }
     dispatch(logout());
     navigate("/log-in");
   };
